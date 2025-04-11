@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Orange Beacon Job Tracker</title>
+  <style>
+    body {
+      background-color: #0d1117;
+      color: #e6edf3;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 2rem;
+    }
+    h1 {
+      color: #f97316;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    input, button {
+      padding: 0.5rem;
+      border: none;
+      border-radius: 6px;
+      margin: 0.2rem;
+    }
+    input[type="text"], input[type="number"] {
+      background-color: #161b22;
+      color: white;
+      width: 200px;
+    }
+    button {
+      background-color: #f97316;
+      color: black;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #fb923c;
+    }
+    .job-list {
+      margin-top: 1rem;
+    }
+    .job {
+      background-color: #161b22;
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .totals {
+      margin-top: 2rem;
+      background-color: #161b22;
+      padding: 1rem;
+      border-radius: 6px;
+    }
+    label {
+      margin-left: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Orange Beacon Tracker</h1>
+  <div>
+    <input type="text" id="jobName" placeholder="Job Name" />
+    <input type="number" id="amount" placeholder="Amount ($)" />
+    <button onclick="addJob()">Add Job</button>
+    <button onclick="clearJobs()">Clear All</button>
+  </div>
+
+  <div class="job-list" id="jobList"></div>
+
+  <div class="totals" id="totalsDisplay">
+    <h3>Totals</h3>
+    <p><strong>Total Income:</strong> $<span id="totalIncome">0.00</span></p>
+    <p><strong>Total GST (10%):</strong> $<span id="totalGST">0.00</span></p>
+    <p><strong>Total Tax (30%):</strong> $<span id="totalTax">0.00</span></p>
+    <hr>
+    <p><strong>Still Owed (Unchecked Only):</strong></p>
+    <p>GST: $<span id="owedGST">0.00</span></p>
+    <p>Tax: $<span id="owedTax">0.00</span></p>
+  </div>
+
+  <script>
+    let jobs = JSON.parse(localStorage.getItem("jobs") || "[]");
+    renderJobs();
+
+    function addJob() {
+      const name = document.getElementById("jobName").value.trim();
+      const amount = parseFloat(document.getElementById("amount").value);
+      if (!name || isNaN(amount)) return alert("Please enter a job name and amount.");
+
+      jobs.push({ name, amount, checked: false });
+      localStorage.setItem("jobs", JSON.stringify(jobs));
+      document.getElementById("jobName").value = "";
+      document.getElementById("amount").value = "";
+      renderJobs();
+    }
+
+    function renderJobs() {
+      const jobList = document.getElementById("jobList");
+      jobList.innerHTML = "";
+
+      let totalIncome = 0, totalGST = 0, totalTax = 0;
+      let owedGST = 0, owedTax = 0;
+
+      jobs.forEach((job, index) => {
+        const gst = job.amount * 0.10;
+        const tax = job.amount * 0.30;
+        totalIncome += job.amount;
+        totalGST += gst;
+        totalTax += tax;
+        if (!job.checked) {
+          owedGST += gst;
+          owedTax += tax;
+        }
+
+        const jobDiv = document.createElement("div");
+        jobDiv.className = "job";
+        jobDiv.innerHTML = `
+          <
