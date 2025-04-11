@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Tax & GST Tracker</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
+    }
+    input, button, select {
+      padding: 10px;
+      margin: 8px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .job-list {
+      margin-top: 20px;
+    }
+    .job-item {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Job Tax & GST Tracker</h2>
+
+  <label for="jobName">Job Name</label>
+  <input type="text" id="jobName" placeholder="e.g. Camera Install - Smith St" />
+
+  <label for="amountPaid">Amount Paid (incl. GST)</label>
+  <input type="number" id="amountPaid" placeholder="e.g. 1100" />
+
+  <label for="taxRate">Tax Rate (%)</label>
+  <input type="number" id="taxRate" value="25" />
+
+  <button onclick="addJob()">Add Job</button>
+
+  <div id="result"></div>
+
+  <div class="job-list" id="jobList"></div>
+
+  <script>
+    const jobs = JSON.parse(localStorage.getItem('jobs') || '[]');
+
+    function addJob() {
+      const jobName = document.getElementById('jobName').value.trim();
+      const amountPaid = parseFloat(document.getElementById('amountPaid').value);
+      const taxRate = parseFloat(document.getElementById('taxRate').value);
+
+      if (!jobName || isNaN(amountPaid) || isNaN(taxRate)) {
+        alert('Please enter all fields correctly.');
+        return;
+      }
+
+      if (jobs.find(j => j.name.toLowerCase() === jobName.toLowerCase())) {
+        alert('Job already entered.');
+        return;
+      }
+
+      const gst = amountPaid / 11;
+      const net = amountPaid - gst;
+      const tax = net * (taxRate / 100);
+      const keep = net - tax;
+
+      const job = {
+        name: jobName,
+        amount: amountPaid,
+        gst: gst.toFixed(2),
+        tax: tax.toFixed(2),
+        keep: keep.toFixed(2)
+      };
+
+      jobs.push(job);
+      localStorage.setItem('jobs', JSON.stringify(jobs));
+
+      displayJobs();
+      document.getElementById('jobName').value = '';
+      document.getElementById('amountPaid').value = '';
+    }
+
+    function displayJobs() {
+      const list = document.getElementById('jobList');
+      list.innerHTML = '';
+
+      jobs.forEach(job => {
+        const div = document.createElement('div');
+        div.className = 'job-item';
+        div.innerHTML = `
+          <strong>${job.name}</strong><br>
+          Amount Paid: $${job.amount}<br>
+          GST to Set Aside: $${job.gst}<br>
+          Tax to Set Aside: $${job.tax}<br>
+          Keep: $${job.keep}
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    displayJobs();
+  </script>
+</body>
+</html>
