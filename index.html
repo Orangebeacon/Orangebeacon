@@ -1,165 +1,140 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Orange Beacon - GST & Tax Tracker</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orange Beacon Job Tracker</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #2f2f2f;
-      color: #f5f5f5;
+      background-color: #121212;
+      color: #f1f1f1;
       padding: 20px;
-      text-align: center;
     }
-
-    h2 {
-      color: #ff9800;
-      margin-bottom: 20px;
+    h1 {
+      color: orange;
     }
-
     input, button {
       padding: 10px;
-      margin: 10px 0;
-      width: 250px;
-      border-radius: 5px;
+      margin: 5px 0;
       border: none;
-      font-size: 14px;
+      border-radius: 5px;
     }
-
+    input {
+      width: 100%;
+    }
     button {
-      background-color: #ff9800;
+      background-color: orange;
       color: black;
-      cursor: pointer;
       font-weight: bold;
+      cursor: pointer;
     }
-
-    button:hover {
-      background-color: #e68900;
+    .job {
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 10px;
+      margin: 10px 0;
+      background-color: #1e1e1e;
     }
-
-    table {
-      width: 80%;
-      margin-top: 20px;
-      border-collapse: collapse;
-      margin-left: auto;
-      margin-right: auto;
+    .job input[type="checkbox"] {
+      margin-right: 5px;
     }
-
-    th, td {
-      padding: 12px;
-      text-align: center;
-      border: 1px solid #444;
-    }
-
-    th {
-      background-color: #444;
-    }
-
-    tr:nth-child(even) {
-      background-color: #333;
-    }
-
-    tr:nth-child(odd) {
-      background-color: #222;
-    }
-
     .totals {
-      margin-top: 30px;
-      font-size: 16px;
+      margin-top: 20px;
+      font-weight: bold;
     }
   </style>
 </head>
 <body>
+  <h1>Orange Beacon Job Tracker</h1>
 
-  <h2>Orange Beacon - GST & Tax Tracker</h2>
+  <input id="jobName" placeholder="Job name">
+  <input id="jobAmount" placeholder="Job amount ($)" type="number">
+  <button onclick="addJob()">Add Job</button>
 
-  <input type="text" id="jobName" placeholder="Enter Job Name" />
-  <input type="number" id="amount" placeholder="Enter Amount (incl. GST)" />
-
-  <div>
-    <button onclick="addJob()">Add Job</button>
-    <button onclick="clearJobs()">Clear All Jobs</button>
-  </div>
-
-  <table id="jobList">
-    <thead>
-      <tr>
-        <th>Job Name</th>
-        <th>Amount</th>
-        <th>GST (10%)</th>
-        <th>Tax (30%)</th>
-        <th>Paid</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <div id="jobList"></div>
 
   <div class="totals">
-    <p>Total GST Owing: $<span id="totalGST">0.00</span></p>
-    <p>Total Tax Owing: $<span id="totalTax">0.00</span></p>
+    <p>Total GST to set aside: $<span id="totalGST">0.00</span></p>
+    <p>Total Tax to set aside: $<span id="totalTax">0.00</span></p>
   </div>
 
   <script>
-    let jobs = [];
+    let jobs = JSON.parse(localStorage.getItem('jobs')) || [];
+
+    function saveJobs() {
+      localStorage.setItem('jobs', JSON.stringify(jobs));
+    }
 
     function addJob() {
-      const jobName = document.getElementById("jobName").value.trim();
-      const amount = parseFloat(document.getElementById("amount").value);
+      const name = document.getElementById('jobName').value.trim();
+      const amount = parseFloat(document.getElementById('jobAmount').value);
+      if (!name || isNaN(amount)) return;
 
-      if (!jobName || isNaN(amount)) {
-        alert("Please enter both job name and amount.");
-        return;
-      }
+      const job = {
+        name,
+        amount,
+        gst: +(amount * 0.10).toFixed(2),
+        tax: +(amount * 0.30).toFixed(2),
+        paid: false,
+        setAside: false
+      };
 
-      const gst = amount * 0.1;
-      const tax = amount * 0.3;
+      jobs.push(job);
+      saveJobs();
+      renderJobs();
 
-      jobs.push({ jobName, amount, gst, tax, paid: false });
-      document.getElementById("jobName").value = "";
-      document.getElementById("amount").value = "";
-      updateJobList();
+      document.getElementById('jobName').value = '';
+      document.getElementById('jobAmount').value = '';
     }
 
-    function togglePaid(index) {
-      jobs[index].paid = !jobs[index].paid;
-      updateJobList();
-    }
-
-    function clearJobs() {
-      if (confirm("Are you sure you want to clear all jobs?")) {
-        jobs = [];
-        updateJobList();
-      }
-    }
-
-    function updateJobList() {
-      const jobList = document.getElementById("jobList").getElementsByTagName("tbody")[0];
-      jobList.innerHTML = "";
+    function renderJobs() {
+      const jobList = document.getElementById('jobList');
+      jobList.innerHTML = '';
 
       let totalGST = 0;
       let totalTax = 0;
 
       jobs.forEach((job, index) => {
-        const row = jobList.insertRow();
+        const div = document.createElement('div');
+        div.className = 'job';
 
-        row.innerHTML = `
-          <td>${job.jobName}</td>
-          <td>$${job.amount.toFixed(2)}</td>
-          <td>$${job.gst.toFixed(2)}</td>
-          <td>$${job.tax.toFixed(2)}</td>
-          <td><input type="checkbox" ${job.paid ? "checked" : ""} onclick="togglePaid(${index})"></td>
+        const gst = job.gst.toFixed(2);
+        const tax = job.tax.toFixed(2);
+
+        if (job.paid && !job.setAside) {
+          totalGST += parseFloat(gst);
+          totalTax += parseFloat(tax);
+        }
+
+        div.innerHTML = `
+          <p><strong>${job.name}</strong> - $${job.amount.toFixed(2)}</p>
+          <p>GST: $${gst} | Tax: $${tax}</p>
+          <label><input type="checkbox" ${job.paid ? 'checked' : ''} onchange="togglePaid(${index})">Customer Paid</label><br>
+          <label><input type="checkbox" ${job.setAside ? 'checked' : ''} onchange="toggleSetAside(${index})">GST/Tax Set Aside</label>
         `;
 
-        if (!job.paid) {
-          totalGST += job.gst;
-          totalTax += job.tax;
-        }
+        jobList.appendChild(div);
       });
 
-      document.getElementById("totalGST").textContent = totalGST.toFixed(2);
-      document.getElementById("totalTax").textContent = totalTax.toFixed(2);
+      document.getElementById('totalGST').innerText = totalGST.toFixed(2);
+      document.getElementById('totalTax').innerText = totalTax.toFixed(2);
     }
-  </script>
 
+    function togglePaid(index) {
+      jobs[index].paid = !jobs[index].paid;
+      saveJobs();
+      renderJobs();
+    }
+
+    function toggleSetAside(index) {
+      jobs[index].setAside = !jobs[index].setAside;
+      saveJobs();
+      renderJobs();
+    }
+
+    // Load jobs on page load
+    renderJobs();
+  </script>
 </body>
 </html>
