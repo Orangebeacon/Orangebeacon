@@ -2,46 +2,62 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Orange Beacon">
+  <link rel="apple-touch-icon" href="icon.png">
   <title>Orange Beacon Job Tracker</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: #121212;
       color: #f1f1f1;
       padding: 20px;
+      margin: 0;
     }
     h1 {
       color: orange;
+      font-size: 2em;
+      margin-bottom: 10px;
     }
     input, button {
-      padding: 10px;
-      margin: 5px 0;
+      padding: 16px;
+      margin: 8px 0;
       border: none;
-      border-radius: 5px;
+      border-radius: 10px;
+      font-size: 1.1em;
     }
     input {
       width: 100%;
+      background: #1f1f1f;
+      color: white;
     }
     button {
       background-color: orange;
       color: black;
       font-weight: bold;
-      cursor: pointer;
+      width: 100%;
     }
     .job {
       border: 1px solid #333;
-      border-radius: 10px;
-      padding: 10px;
-      margin: 10px 0;
+      border-radius: 15px;
+      padding: 16px;
+      margin: 15px 0;
       background-color: #1e1e1e;
+      font-size: 1.1em;
     }
     .job input[type="checkbox"] {
-      margin-right: 5px;
+      margin-right: 10px;
     }
     .totals {
-      margin-top: 20px;
+      margin-top: 30px;
       font-weight: bold;
+      font-size: 1.3em;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
     }
   </style>
 </head>
@@ -110,7 +126,7 @@
         div.innerHTML = `
           <p><strong>${job.name}</strong> - $${job.amount.toFixed(2)}</p>
           <p>GST: $${gst} | Tax: $${tax}</p>
-          <label><input type="checkbox" ${job.paid ? 'checked' : ''} onchange="togglePaid(${index})">Customer Paid</label><br>
+          <label><input type="checkbox" ${job.paid ? 'checked' : ''} onchange="togglePaid(${index})">Customer Paid</label>
           <label><input type="checkbox" ${job.setAside ? 'checked' : ''} onchange="toggleSetAside(${index})">GST/Tax Set Aside</label>
         `;
 
@@ -133,7 +149,6 @@
       renderJobs();
     }
 
-    // Load jobs on page load
     renderJobs();
   </script>
 </body>
