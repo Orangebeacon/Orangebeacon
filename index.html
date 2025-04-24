@@ -58,8 +58,8 @@
 <body>
   <h1>GST & Tax Tracker</h1>
   <input type="text" id="jobName" placeholder="Job Name" />
-  <input type="number" id="amount" placeholder="Amount (inc. GST)" />
-  <button onclick="addJob()">Add Job</button>
+  <input type="number" id="amount" placeholder="Amount (total paid after tax)" />
+  <button id="addJobButton">Add Job</button>
   <div id="jobList"></div>
   <div class="totals">
     <p>Total GST Owing: $<span id="totalGST">0.00</span></p>
@@ -69,13 +69,15 @@
   <script>
     let jobs = JSON.parse(localStorage.getItem('jobs')) || [];
 
+    // Save jobs to local storage
     function saveJobs() {
       localStorage.setItem('jobs', JSON.stringify(jobs));
     }
 
+    // Calculate totals
     function calculateAndRender() {
       const jobList = document.getElementById('jobList');
-      jobList.innerHTML = '';
+      jobList.innerHTML = '';  // Clear current job list
 
       let totalGST = 0;
       let totalTax = 0;
@@ -84,16 +86,21 @@
         const div = document.createElement('div');
         div.className = 'job';
 
+        // Calculate GST (1/11th of the total amount paid, assuming it's after tax)
         const gst = job.amount / 11;
-        const net = job.amount - gst;
-        const tax = net * 0.3;
+        // Calculate net amount (Total minus GST)
+        const netAmount = job.amount - gst;
+        // Calculate tax (30% of net amount)
+        const tax = netAmount * 0.3;
 
+        // Only include GST and Tax if the job is marked as paid
         totalGST += job.paid ? gst : 0;
         totalTax += job.paid ? tax : 0;
 
+        // Render the job information
         div.innerHTML = `
           <p><strong>${job.name}</strong></p>
-          <p>Amount: $${job.amount.toFixed(2)}</p>
+          <p>Amount (Paid, after Tax): $${job.amount.toFixed(2)}</p>
           <p>GST (1/11): $${gst.toFixed(2)}</p>
           <p>Tax (30% after GST): $${tax.toFixed(2)}</p>
           <label><input type="checkbox" ${job.paid ? 'checked' : ''} onchange="togglePaid(${index})" /> Paid</label>
@@ -101,28 +108,37 @@
         jobList.appendChild(div);
       });
 
+      // Update the total GST and Tax amounts
       document.getElementById('totalGST').innerText = totalGST.toFixed(2);
       document.getElementById('totalTax').innerText = totalTax.toFixed(2);
     }
 
+    // Add job to the list
     function addJob() {
       const name = document.getElementById('jobName').value.trim();
       const amount = parseFloat(document.getElementById('amount').value);
-      if (!name || isNaN(amount)) return;
-      jobs.push({ name, amount, paid: false });
-      saveJobs();
-      calculateAndRender();
+      if (!name || isNaN(amount)) return;  // Ensure valid inputs
+
+      jobs.push({ name, amount, paid: false });  // Add job
+      saveJobs();  // Save to local storage
+      calculateAndRender();  // Recalculate and display jobs
+
+      // Clear the input fields after adding a job
       document.getElementById('jobName').value = '';
       document.getElementById('amount').value = '';
     }
 
+    // Toggle paid status for a job
     function togglePaid(index) {
       jobs[index].paid = !jobs[index].paid;
-      saveJobs();
-      calculateAndRender();
+      saveJobs();  // Save updated status
+      calculateAndRender();  // Recalculate and display updated totals
     }
 
-    calculateAndRender();
+    // Bind the addJob function to the button click event
+    document.getElementById('addJobButton').addEventListener('click', addJob);
+
+    calculateAndRender();  // Initial calculation when the page loads
   </script>
 </body>
 </html>
