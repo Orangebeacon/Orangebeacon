@@ -44,6 +44,7 @@
       max-width: 350px;
       display: flex;
       flex-direction: column;
+      position: relative;
     }
     .job p {
       margin: 5px 0;
@@ -56,9 +57,20 @@
       font-size: 1rem;
       margin-top: 10px;
     }
-    #addJobButton {
+    #addJobButton, #clearAllButton {
       background-color: #ff9800;
       color: white;
+      cursor: pointer;
+    }
+    .delete-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: red;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 5px 10px;
       cursor: pointer;
     }
   </style>
@@ -68,6 +80,7 @@
   <input type="text" id="jobName" placeholder="Job Name" />
   <input type="number" id="amount" placeholder="Amount (Paid after Tax)" />
   <button id="addJobButton">Add Job</button>
+  <button id="clearAllButton">Clear All Jobs</button>
   <div id="jobList"></div>
   <div class="totals">
     <p>Total GST Owing: $<span id="totalGST">0.00</span></p>
@@ -77,15 +90,13 @@
   <script>
     let jobs = JSON.parse(localStorage.getItem('jobs')) || [];
 
-    // Save jobs to local storage
     function saveJobs() {
       localStorage.setItem('jobs', JSON.stringify(jobs));
     }
 
-    // Calculate totals
     function calculateAndRender() {
       const jobList = document.getElementById('jobList');
-      jobList.innerHTML = '';  // Clear current job list
+      jobList.innerHTML = '';
 
       let totalGST = 0;
       let totalTax = 0;
@@ -94,19 +105,17 @@
         const div = document.createElement('div');
         div.className = 'job';
 
-        // Calculate GST (1/11th of the total amount paid, assuming it's after tax)
         const gst = job.amount / 11;
-        // Calculate net amount (Total minus GST)
         const netAmount = job.amount - gst;
-        // Calculate tax (30% of net amount)
         const tax = netAmount * 0.3;
 
-        // Only include GST and Tax if the job is marked as paid
-        totalGST += job.paid ? gst : 0;
-        totalTax += job.paid ? tax : 0;
+        if (job.paid && !job.setAside) {
+          totalGST += gst;
+          totalTax += tax;
+        }
 
-        // Render the job information
         div.innerHTML = `
+          <button class="delete-btn" onclick="deleteJob(${index})">X</button>
           <p><strong>${job.name}</strong></p>
           <p>Amount (Paid after Tax): $${job.amount.toFixed(2)}</p>
           <p>GST (1/11): $${gst.toFixed(2)}</p>
@@ -114,47 +123,56 @@
           <label><input type="checkbox" ${job.paid ? 'checked' : ''} onchange="togglePaid(${index})" /> Paid</label>
           <label><input type="checkbox" ${job.setAside ? 'checked' : ''} onchange="toggleSetAside(${index})" /> GST & Tax Set Aside</label>
         `;
+
         jobList.appendChild(div);
       });
 
-      // Update the total GST and Tax amounts
       document.getElementById('totalGST').innerText = totalGST.toFixed(2);
       document.getElementById('totalTax').innerText = totalTax.toFixed(2);
     }
 
-    // Add job to the list
     function addJob() {
       const name = document.getElementById('jobName').value.trim();
       const amount = parseFloat(document.getElementById('amount').value);
-      if (!name || isNaN(amount)) return;  // Ensure valid inputs
+      if (!name || isNaN(amount)) return;
 
-      jobs.push({ name, amount, paid: false, setAside: false });  // Add job
-      saveJobs();  // Save to local storage
-      calculateAndRender();  // Recalculate and display jobs
-
-      // Clear the input fields after adding a job
+      jobs.push({ name, amount, paid: false, setAside: false });
+      saveJobs();
+      calculateAndRender();
       document.getElementById('jobName').value = '';
       document.getElementById('amount').value = '';
     }
 
-    // Toggle paid status for a job
     function togglePaid(index) {
       jobs[index].paid = !jobs[index].paid;
-      saveJobs();  // Save updated status
-      calculateAndRender();  // Recalculate and display updated totals
+      saveJobs();
+      calculateAndRender();
     }
 
-    // Toggle GST & Tax set aside status for a job
     function toggleSetAside(index) {
       jobs[index].setAside = !jobs[index].setAside;
-      saveJobs();  // Save updated status
-      calculateAndRender();  // Recalculate and display updated totals
+      saveJobs();
+      calculateAndRender();
     }
 
-    // Bind the addJob function to the button click event
-    document.getElementById('addJobButton').addEventListener('click', addJob);
+    function deleteJob(index) {
+      jobs.splice(index, 1);
+      saveJobs();
+      calculateAndRender();
+    }
 
-    calculateAndRender();  // Initial calculation when the page loads
+    function clearAllJobs() {
+      if (confirm("Are you sure you want to clear all jobs?")) {
+        jobs = [];
+        saveJobs();
+        calculateAndRender();
+      }
+    }
+
+    document.getElementById('addJobButton').addEventListener('click', addJob);
+    document.getElementById('clearAllButton').addEventListener('click', clearAllJobs);
+
+    calculateAndRender();
   </script>
 </body>
 </html>
