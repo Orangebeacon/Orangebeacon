@@ -14,22 +14,21 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      height: 100vh;
     }
     h1 {
       margin-top: 20px;
-      font-size: 1.8rem;
+      font-size: 2rem;
       color: #ff9800;
     }
     input, button {
       font-size: 1.1rem;
-      padding: 10px;
+      padding: 12px;
       margin: 5px;
       border: none;
-      border-radius: 10px;
-    }
-    input {
-      width: 70vw;
-      max-width: 300px;
+      border-radius: 12px;
+      width: 80vw;
+      max-width: 350px;
     }
     button {
       background-color: #ff9800;
@@ -41,8 +40,8 @@
       padding: 15px;
       margin: 10px;
       border-radius: 12px;
-      width: 90vw;
-      max-width: 400px;
+      width: 80vw;
+      max-width: 350px;
       display: flex;
       flex-direction: column;
     }
@@ -50,15 +49,24 @@
       margin: 5px 0;
     }
     .totals {
-      margin: 20px;
+      margin-top: 30px;
       font-size: 1.2rem;
+    }
+    label {
+      font-size: 1rem;
+      margin-top: 10px;
+    }
+    #addJobButton {
+      background-color: #ff9800;
+      color: white;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
   <h1>GST & Tax Tracker</h1>
   <input type="text" id="jobName" placeholder="Job Name" />
-  <input type="number" id="amount" placeholder="Amount (total paid after tax)" />
+  <input type="number" id="amount" placeholder="Amount (Paid after Tax)" />
   <button id="addJobButton">Add Job</button>
   <div id="jobList"></div>
   <div class="totals">
@@ -100,10 +108,11 @@
         // Render the job information
         div.innerHTML = `
           <p><strong>${job.name}</strong></p>
-          <p>Amount (Paid, after Tax): $${job.amount.toFixed(2)}</p>
+          <p>Amount (Paid after Tax): $${job.amount.toFixed(2)}</p>
           <p>GST (1/11): $${gst.toFixed(2)}</p>
           <p>Tax (30% after GST): $${tax.toFixed(2)}</p>
           <label><input type="checkbox" ${job.paid ? 'checked' : ''} onchange="togglePaid(${index})" /> Paid</label>
+          <label><input type="checkbox" ${job.setAside ? 'checked' : ''} onchange="toggleSetAside(${index})" /> GST & Tax Set Aside</label>
         `;
         jobList.appendChild(div);
       });
@@ -119,7 +128,7 @@
       const amount = parseFloat(document.getElementById('amount').value);
       if (!name || isNaN(amount)) return;  // Ensure valid inputs
 
-      jobs.push({ name, amount, paid: false });  // Add job
+      jobs.push({ name, amount, paid: false, setAside: false });  // Add job
       saveJobs();  // Save to local storage
       calculateAndRender();  // Recalculate and display jobs
 
@@ -131,6 +140,13 @@
     // Toggle paid status for a job
     function togglePaid(index) {
       jobs[index].paid = !jobs[index].paid;
+      saveJobs();  // Save updated status
+      calculateAndRender();  // Recalculate and display updated totals
+    }
+
+    // Toggle GST & Tax set aside status for a job
+    function toggleSetAside(index) {
+      jobs[index].setAside = !jobs[index].setAside;
       saveJobs();  // Save updated status
       calculateAndRender();  // Recalculate and display updated totals
     }
