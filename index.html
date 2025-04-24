@@ -3,17 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Orange Beacon Tax & GST Tracker</title>
+  <title>Orange Beacon GST & Tax Tracker</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #111;
+      background-color: #121212;
       color: #f0f0f0;
+      padding: 20px;
     }
 
     h1 {
       color: orange;
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+
+    input, button {
+      padding: 10px;
+      margin-top: 5px;
+      margin-bottom: 15px;
+      width: 100%;
+      max-width: 300px;
+      box-sizing: border-box;
+    }
+
+    button {
+      background-color: orange;
+      color: black;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
     }
 
     table {
@@ -24,26 +46,13 @@
 
     th, td {
       padding: 8px;
+      border-bottom: 1px solid #444;
       text-align: left;
-      border-bottom: 1px solid #555;
-    }
-
-    input, button {
-      padding: 8px;
-      margin: 5px 0;
-    }
-
-    button {
-      background: orange;
-      border: none;
-      color: black;
-      font-weight: bold;
-      cursor: pointer;
     }
 
     .totals {
       margin-top: 20px;
-      font-size: 18px;
+      font-size: 1.1em;
     }
 
     .cleared {
@@ -52,15 +61,16 @@
   </style>
 </head>
 <body>
-  <h1>Job Tax & GST Tracker</h1>
 
-  <label>Job Name:</label><br>
-  <input type="text" id="jobName" /><br>
+  <h1>Orange Beacon Tax & GST Tracker</h1>
 
-  <label>Amount (incl. GST):</label><br>
-  <input type="number" id="amount" /><br>
+  <label for="jobName">Job Name:</label>
+  <input type="text" id="jobName" placeholder="Enter job name" />
 
-  <button id="addJobBtn">Add Job</button>
+  <label for="amount">Amount (incl. GST):</label>
+  <input type="number" id="amount" placeholder="Enter total amount" />
+
+  <button onclick="addJob()">Add Job</button>
   <button onclick="clearJobs()">Clear All</button>
 
   <table>
@@ -82,4 +92,69 @@
   </div>
 
   <script>
-    const jobNameInput = document.getElementById("jobName");
+    const jobList = document.getElementById("jobList");
+    const totalGSTEl = document.getElementById("totalGST");
+    const totalTaxEl = document.getElementById("totalTax");
+
+    let jobs = [];
+
+    function addJob() {
+      const jobName = document.getElementById("jobName").value.trim();
+      const amount = parseFloat(document.getElementById("amount").value);
+
+      if (!jobName || isNaN(amount)) {
+        alert("Please enter both job name and amount.");
+        return;
+      }
+
+      const gst = amount * 0.1;
+      const tax = amount * 0.3;
+
+      jobs.push({ jobName, amount, gst, tax, cleared: false });
+      document.getElementById("jobName").value = "";
+      document.getElementById("amount").value = "";
+      updateJobList();
+    }
+
+    function toggleCleared(index) {
+      jobs[index].cleared = !jobs[index].cleared;
+      updateJobList();
+    }
+
+    function clearJobs() {
+      if (confirm("Are you sure you want to clear all jobs?")) {
+        jobs = [];
+        updateJobList();
+      }
+    }
+
+    function updateJobList() {
+      jobList.innerHTML = "";
+      let totalGST = 0;
+      let totalTax = 0;
+
+      jobs.forEach((job, index) => {
+        const row = document.createElement("tr");
+        row.className = job.cleared ? "cleared" : "";
+        row.innerHTML = `
+          <td>${job.jobName}</td>
+          <td>$${job.amount.toFixed(2)}</td>
+          <td>$${job.gst.toFixed(2)}</td>
+          <td>$${job.tax.toFixed(2)}</td>
+          <td><input type="checkbox" ${job.cleared ? "checked" : ""} onchange="toggleCleared(${index})"></td>
+        `;
+        jobList.appendChild(row);
+
+        if (!job.cleared) {
+          totalGST += job.gst;
+          totalTax += job.tax;
+        }
+      });
+
+      totalGSTEl.textContent = totalGST.toFixed(2);
+      totalTaxEl.textContent = totalTax.toFixed(2);
+    }
+  </script>
+
+</body>
+</html>
