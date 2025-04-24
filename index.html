@@ -58,7 +58,7 @@
 <body>
   <h1>GST & Tax Tracker</h1>
   <input type="text" id="jobName" placeholder="Job Name" />
-  <input type="number" id="amount" placeholder="Amount (inc. GST)" />
+  <input type="number" id="amount" placeholder="Amount (total paid after tax)" />
   <button onclick="addJob()">Add Job</button>
   <div id="jobList"></div>
   <div class="totals">
@@ -71,35 +71,4 @@
 
     // Save jobs to local storage
     function saveJobs() {
-      localStorage.setItem('jobs', JSON.stringify(jobs));
-    }
-
-    // Calculate totals
-    function calculateAndRender() {
-      const jobList = document.getElementById('jobList');
-      jobList.innerHTML = '';  // Clear current job list
-
-      let totalGST = 0;
-      let totalTax = 0;
-
-      jobs.forEach((job, index) => {
-        const div = document.createElement('div');
-        div.className = 'job';
-
-        // Calculate GST (1/11th of the total amount)
-        const gst = job.amount / 11;  
-        // Calculate net amount (Total minus GST)
-        const netAmount = job.amount - gst;  
-        // Calculate tax (30% of net amount)
-        const tax = netAmount * 0.3;  
-
-        // Only include GST and Tax if the job is marked as paid
-        totalGST += job.paid ? gst : 0;
-        totalTax += job.paid ? tax : 0;
-
-        // Render the job information
-        div.innerHTML = `
-          <p><strong>${job.name}</strong></p>
-          <p>Amount (inc. GST): $${job.amount.toFixed(2)}</p>
-          <p>GST (1/11): $${gst.toFixed(2)}</p>
-          <p>Tax (30% after GST): $${tax.to
+      localStorage
