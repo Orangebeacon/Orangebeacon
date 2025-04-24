@@ -58,6 +58,73 @@
     }
   </style>
 </head>
+<script>
+  const jobNameInput = document.getElementById("jobName");
+  const amountInput = document.getElementById("amount");
+  const jobList = document.getElementById("jobList");
+  const totalGSTEl = document.getElementById("totalGST");
+  const totalTaxEl = document.getElementById("totalTax");
+
+  let jobs = [];
+
+  function addJob() {
+    const jobName = jobNameInput.value.trim();
+    const amount = parseFloat(amountInput.value);
+
+    if (!jobName || isNaN(amount)) {
+      alert("Please enter a valid job name and amount.");
+      return;
+    }
+
+    const gst = amount * 0.1;
+    const tax = amount * 0.3;
+
+    jobs.push({ jobName, amount, gst, tax, cleared: false });
+    updateJobList();
+
+    jobNameInput.value = "";
+    amountInput.value = "";
+  }
+
+  function toggleCleared(index) {
+    jobs[index].cleared = !jobs[index].cleared;
+    updateJobList();
+  }
+
+  function updateJobList() {
+    jobList.innerHTML = "";
+    let totalGST = 0;
+    let totalTax = 0;
+
+    jobs.forEach((job, index) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${job.jobName}</td>
+        <td>$${job.amount.toFixed(2)}</td>
+        <td>$${job.gst.toFixed(2)}</td>
+        <td>$${job.tax.toFixed(2)}</td>
+        <td><input type="checkbox" ${job.cleared ? "checked" : ""} onchange="toggleCleared(${index})"></td>
+      `;
+      jobList.appendChild(row);
+
+      if (!job.cleared) {
+        totalGST += job.gst;
+        totalTax += job.tax;
+      }
+    });
+
+    totalGSTEl.textContent = totalGST.toFixed(2);
+    totalTaxEl.textContent = totalTax.toFixed(2);
+  }
+
+  function clearJobs() {
+    jobs = [];
+    updateJobList();
+  }
+</script>
+</body>
+</html>
+
 <body>
   <h1>Orange Beacon Tracker</h1>
   <div>
