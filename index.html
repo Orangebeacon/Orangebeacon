@@ -109,4 +109,21 @@
     function addJob() {
       const name = document.getElementById('jobName').value.trim();
       const amount = parseFloat(document.getElementById('amount').value);
-      if (!name || isNa
+      if (!name || isNaN(amount)) return;
+      jobs.push({ name, amount, paid: false });
+      saveJobs();
+      calculateAndRender();
+      document.getElementById('jobName').value = '';
+      document.getElementById('amount').value = '';
+    }
+
+    function togglePaid(index) {
+      jobs[index].paid = !jobs[index].paid;
+      saveJobs();
+      calculateAndRender();
+    }
+
+    calculateAndRender();
+  </script>
+</body>
+</html>
