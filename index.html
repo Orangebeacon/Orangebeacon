@@ -3,89 +3,71 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GST & Tax Tracker</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="https://orangebeacon.github.io/Orangebeacon/icon.png">
+  <title>Orange Beacon Tracker</title>
   <style>
     body {
-      background-color: #121212;
-      color: #f0f0f0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen;
       margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      height: 100vh;
+      padding: 1rem;
+      background-color: #0d1117;
+      color: #f0f6fc;
+      font-size: 1.1rem;
     }
     h1 {
-      margin-top: 20px;
-      font-size: 2rem;
-      color: #ff9800;
+      text-align: center;
+      color: #ffa500;
     }
-    input, button {
-      font-size: 1.1rem;
-      padding: 12px;
-      margin: 5px;
+    input[type="text"], input[type="number"] {
+      padding: 10px;
+      font-size: 1rem;
+      width: calc(100% - 24px);
+      margin-bottom: 10px;
+      border-radius: 8px;
       border: none;
-      border-radius: 12px;
-      width: 80vw;
-      max-width: 350px;
     }
     button {
-      background-color: #ff9800;
-      color: white;
-      cursor: pointer;
+      background-color: #ffa500;
+      color: black;
+      padding: 12px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      width: 100%;
+      margin-bottom: 20px;
     }
     .job {
-      background-color: #1e1e1e;
+      background-color: #161b22;
       padding: 15px;
-      margin: 10px;
-      border-radius: 12px;
-      width: 80vw;
-      max-width: 350px;
-      display: flex;
-      flex-direction: column;
-      position: relative;
+      margin-bottom: 15px;
+      border-radius: 10px;
     }
-    .job p {
+    .job label {
+      display: block;
       margin: 5px 0;
     }
     .totals {
-      margin-top: 30px;
-      font-size: 1.2rem;
-    }
-    label {
-      font-size: 1rem;
-      margin-top: 10px;
-    }
-    #addJobButton, #clearAllButton {
-      background-color: #ff9800;
-      color: white;
-      cursor: pointer;
-    }
-    .delete-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: red;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: 5px 10px;
-      cursor: pointer;
+      background-color: #161b22;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <h1>GST & Tax Tracker</h1>
+  <h1>Orange Beacon Tracker</h1>
   <input type="text" id="jobName" placeholder="Job Name" />
-  <input type="number" id="amount" placeholder="Amount (Paid after Tax)" />
-  <button id="addJobButton">Add Job</button>
-  <button id="clearAllButton">Clear All Jobs</button>
+  <input type="number" id="amount" placeholder="Total Paid (after GST)" />
+  <button onclick="addJob()">Add Job</button>
   <div id="jobList"></div>
   <div class="totals">
-    <p>Total GST Owing: $<span id="totalGST">0.00</span></p>
-    <p>Total Tax Owing: $<span id="totalTax">0.00</span></p>
+    <p><strong>Total GST Owed:</strong> $<span id="totalGST">0.00</span></p>
+    <p><strong>Total Tax Owed:</strong> $<span id="totalTax">0.00</span></p>
   </div>
+  <button onclick="clearAllJobs()">Clear All Jobs</button>
 
   <script>
     let jobs = JSON.parse(localStorage.getItem('jobs')) || [];
@@ -94,51 +76,47 @@
       localStorage.setItem('jobs', JSON.stringify(jobs));
     }
 
-    function calculateAndRender() {
-      const jobList = document.getElementById('jobList');
-      jobList.innerHTML = '';
-
-      let totalGST = 0;
-      let totalTax = 0;
+    function loadJobs() {
+      document.getElementById('jobList').innerHTML = '';
+      let totalGST = 0, totalTax = 0;
 
       jobs.forEach((job, index) => {
-        const div = document.createElement('div');
-        div.className = 'job';
+        const jobEl = document.createElement('div');
+        jobEl.className = 'job';
 
-        const gst = job.amount / 11;
-        const netAmount = job.amount - gst;
-        const tax = netAmount * 0.3;
+        const gst = +(job.amount / 11).toFixed(2);
+        const income = job.amount - gst;
+        const tax = +(income * 0.30).toFixed(2);
 
         if (job.paid && !job.setAside) {
           totalGST += gst;
           totalTax += tax;
         }
 
-        div.innerHTML = `
-          <button class="delete-btn" onclick="deleteJob(${index})">X</button>
-          <p><strong>${job.name}</strong></p>
-          <p>Amount (Paid after Tax): $${job.amount.toFixed(2)}</p>
-          <p>GST (1/11): $${gst.toFixed(2)}</p>
-          <p>Tax (30% after GST): $${tax.toFixed(2)}</p>
-          <label><input type="checkbox" ${job.paid ? 'checked' : ''} onchange="togglePaid(${index})" /> Paid</label>
-          <label><input type="checkbox" ${job.setAside ? 'checked' : ''} onchange="toggleSetAside(${index})" /> GST & Tax Set Aside</label>
+        jobEl.innerHTML = `
+          <strong>${job.name}</strong><br>
+          Amount: $${job.amount.toFixed(2)}<br>
+          GST: $${gst}<br>
+          Tax: $${tax}<br>
+          <label><input type="checkbox" ${job.paid ? 'checked' : ''} onchange="togglePaid(${index})"> Paid by Customer</label>
+          <label><input type="checkbox" ${job.setAside ? 'checked' : ''} onchange="toggleSetAside(${index})"> GST & Tax Set Aside</label>
+          <button onclick="deleteJob(${index})">Delete</button>
         `;
-
-        jobList.appendChild(div);
+        document.getElementById('jobList').appendChild(jobEl);
       });
 
-      document.getElementById('totalGST').innerText = totalGST.toFixed(2);
-      document.getElementById('totalTax').innerText = totalTax.toFixed(2);
+      document.getElementById('totalGST').textContent = totalGST.toFixed(2);
+      document.getElementById('totalTax').textContent = totalTax.toFixed(2);
     }
 
     function addJob() {
-      const name = document.getElementById('jobName').value.trim();
+      const name = document.getElementById('jobName').value;
       const amount = parseFloat(document.getElementById('amount').value);
       if (!name || isNaN(amount)) return;
 
       jobs.push({ name, amount, paid: false, setAside: false });
       saveJobs();
-      calculateAndRender();
+      loadJobs();
       document.getElementById('jobName').value = '';
       document.getElementById('amount').value = '';
     }
@@ -146,33 +124,30 @@
     function togglePaid(index) {
       jobs[index].paid = !jobs[index].paid;
       saveJobs();
-      calculateAndRender();
+      loadJobs();
     }
 
     function toggleSetAside(index) {
       jobs[index].setAside = !jobs[index].setAside;
       saveJobs();
-      calculateAndRender();
+      loadJobs();
     }
 
     function deleteJob(index) {
       jobs.splice(index, 1);
       saveJobs();
-      calculateAndRender();
+      loadJobs();
     }
 
     function clearAllJobs() {
-      if (confirm("Are you sure you want to clear all jobs?")) {
+      if (confirm('Are you sure you want to delete all jobs?')) {
         jobs = [];
         saveJobs();
-        calculateAndRender();
+        loadJobs();
       }
     }
 
-    document.getElementById('addJobButton').addEventListener('click', addJob);
-    document.getElementById('clearAllButton').addEventListener('click', clearAllJobs);
-
-    calculateAndRender();
+    loadJobs();
   </script>
 </body>
 </html>
