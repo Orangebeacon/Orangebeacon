@@ -84,12 +84,13 @@
         const div = document.createElement('div');
         div.className = 'job';
 
-        const gst = job.amount / 11;
-        const net = job.amount - gst;
-        const tax = net * 0.3;
+        // Correct calculations
+        const gst = job.amount / 11; // GST is 1/11th of the total
+        const netAmount = job.amount - gst; // Net amount is after GST
+        const tax = netAmount * 0.3; // Tax is 30% of the net amount
 
-        totalGST += job.paid ? gst : 0;
-        totalTax += job.paid ? tax : 0;
+        totalGST += job.paid ? gst : 0; // Only add GST if paid
+        totalTax += job.paid ? tax : 0; // Only add Tax if paid
 
         div.innerHTML = `
           <p><strong>${job.name}</strong></p>
@@ -108,21 +109,4 @@
     function addJob() {
       const name = document.getElementById('jobName').value.trim();
       const amount = parseFloat(document.getElementById('amount').value);
-      if (!name || isNaN(amount)) return;
-      jobs.push({ name, amount, paid: false });
-      saveJobs();
-      calculateAndRender();
-      document.getElementById('jobName').value = '';
-      document.getElementById('amount').value = '';
-    }
-
-    function togglePaid(index) {
-      jobs[index].paid = !jobs[index].paid;
-      saveJobs();
-      calculateAndRender();
-    }
-
-    calculateAndRender();
-  </script>
-</body>
-</html>
+      if (!name || isNa
