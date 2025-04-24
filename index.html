@@ -69,13 +69,15 @@
   <script>
     let jobs = JSON.parse(localStorage.getItem('jobs')) || [];
 
+    // Save jobs to local storage
     function saveJobs() {
       localStorage.setItem('jobs', JSON.stringify(jobs));
     }
 
+    // Calculate totals
     function calculateAndRender() {
       const jobList = document.getElementById('jobList');
-      jobList.innerHTML = '';
+      jobList.innerHTML = '';  // Clear current job list
 
       let totalGST = 0;
       let totalTax = 0;
@@ -84,46 +86,19 @@
         const div = document.createElement('div');
         div.className = 'job';
 
-        // Correct calculations
-        const gst = job.amount / 11; // GST is 1/11th of the total
-        const netAmount = job.amount - gst; // Net amount is after GST
-        const tax = netAmount * 0.3; // Tax is 30% of the net amount
+        // Calculate GST (1/11th of the total amount)
+        const gst = job.amount / 11;  
+        // Calculate net amount (Total minus GST)
+        const netAmount = job.amount - gst;  
+        // Calculate tax (30% of net amount)
+        const tax = netAmount * 0.3;  
 
-        totalGST += job.paid ? gst : 0; // Only add GST if paid
-        totalTax += job.paid ? tax : 0; // Only add Tax if paid
+        // Only include GST and Tax if the job is marked as paid
+        totalGST += job.paid ? gst : 0;
+        totalTax += job.paid ? tax : 0;
 
+        // Render the job information
         div.innerHTML = `
           <p><strong>${job.name}</strong></p>
-          <p>Amount: $${job.amount.toFixed(2)}</p>
-          <p>GST (1/11): $${gst.toFixed(2)}</p>
-          <p>Tax (30% after GST): $${tax.toFixed(2)}</p>
-          <label><input type="checkbox" ${job.paid ? 'checked' : ''} onchange="togglePaid(${index})" /> Paid</label>
-        `;
-        jobList.appendChild(div);
-      });
-
-      document.getElementById('totalGST').innerText = totalGST.toFixed(2);
-      document.getElementById('totalTax').innerText = totalTax.toFixed(2);
-    }
-
-    function addJob() {
-      const name = document.getElementById('jobName').value.trim();
-      const amount = parseFloat(document.getElementById('amount').value);
-      if (!name || isNaN(amount)) return;
-      jobs.push({ name, amount, paid: false });
-      saveJobs();
-      calculateAndRender();
-      document.getElementById('jobName').value = '';
-      document.getElementById('amount').value = '';
-    }
-
-    function togglePaid(index) {
-      jobs[index].paid = !jobs[index].paid;
-      saveJobs();
-      calculateAndRender();
-    }
-
-    calculateAndRender();
-  </script>
-</body>
-</html>
+          <p>Amount (inc. GST): $${job.amount.toFixed(2)}</p>
+          <
