@@ -58,7 +58,7 @@
 <body>
   <h1>GST & Tax Tracker</h1>
   <input type="text" id="jobName" placeholder="Job Name" />
-  <input type="number" id="amount" placeholder="Amount (total paid after tax)" />
+  <input type="number" id="amount" placeholder="Amount (inc. GST)" />
   <button onclick="addJob()">Add Job</button>
   <div id="jobList"></div>
   <div class="totals">
@@ -69,6 +69,60 @@
   <script>
     let jobs = JSON.parse(localStorage.getItem('jobs')) || [];
 
-    // Save jobs to local storage
     function saveJobs() {
-      localStorage
+      localStorage.setItem('jobs', JSON.stringify(jobs));
+    }
+
+    function calculateAndRender() {
+      const jobList = document.getElementById('jobList');
+      jobList.innerHTML = '';
+
+      let totalGST = 0;
+      let totalTax = 0;
+
+      jobs.forEach((job, index) => {
+        const div = document.createElement('div');
+        div.className = 'job';
+
+        const gst = job.amount / 11;
+        const net = job.amount - gst;
+        const tax = net * 0.3;
+
+        totalGST += job.paid ? gst : 0;
+        totalTax += job.paid ? tax : 0;
+
+        div.innerHTML = `
+          <p><strong>${job.name}</strong></p>
+          <p>Amount: $${job.amount.toFixed(2)}</p>
+          <p>GST (1/11): $${gst.toFixed(2)}</p>
+          <p>Tax (30% after GST): $${tax.toFixed(2)}</p>
+          <label><input type="checkbox" ${job.paid ? 'checked' : ''} onchange="togglePaid(${index})" /> Paid</label>
+        `;
+        jobList.appendChild(div);
+      });
+
+      document.getElementById('totalGST').innerText = totalGST.toFixed(2);
+      document.getElementById('totalTax').innerText = totalTax.toFixed(2);
+    }
+
+    function addJob() {
+      const name = document.getElementById('jobName').value.trim();
+      const amount = parseFloat(document.getElementById('amount').value);
+      if (!name || isNaN(amount)) return;
+      jobs.push({ name, amount, paid: false });
+      saveJobs();
+      calculateAndRender();
+      document.getElementById('jobName').value = '';
+      document.getElementById('amount').value = '';
+    }
+
+    function togglePaid(index) {
+      jobs[index].paid = !jobs[index].paid;
+      saveJobs();
+      calculateAndRender();
+    }
+
+    calculateAndRender();
+  </script>
+</body>
+</html>
