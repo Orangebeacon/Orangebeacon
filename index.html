@@ -1,78 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Orange Beacon">
-  <link rel="apple-touch-icon" href="icon.png">
-  <title>Orange Beacon Job Tracker</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GST & Tax Tracker</title>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background-color: #121212;
-      color: #f1f1f1;
-      padding: 20px;
+      color: #f0f0f0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     h1 {
-      color: orange;
-      font-size: 2em;
-      margin-bottom: 10px;
+      margin-top: 20px;
+      font-size: 1.8rem;
+      color: #ff9800;
     }
     input, button {
-      padding: 16px;
-      margin: 8px 0;
+      font-size: 1.1rem;
+      padding: 10px;
+      margin: 5px;
       border: none;
       border-radius: 10px;
-      font-size: 1.1em;
     }
     input {
-      width: 100%;
-      background: #1f1f1f;
-      color: white;
+      width: 70vw;
+      max-width: 300px;
     }
     button {
-      background-color: orange;
-      color: black;
-      font-weight: bold;
-      width: 100%;
+      background-color: #ff9800;
+      color: white;
+      cursor: pointer;
     }
     .job {
-      border: 1px solid #333;
-      border-radius: 15px;
-      padding: 16px;
-      margin: 15px 0;
       background-color: #1e1e1e;
-      font-size: 1.1em;
+      padding: 15px;
+      margin: 10px;
+      border-radius: 12px;
+      width: 90vw;
+      max-width: 400px;
+      display: flex;
+      flex-direction: column;
     }
-    .job input[type="checkbox"] {
-      margin-right: 10px;
+    .job p {
+      margin: 5px 0;
     }
     .totals {
-      margin-top: 30px;
-      font-weight: bold;
-      font-size: 1.3em;
-    }
-    label {
-      display: block;
-      margin-top: 10px;
+      margin: 20px;
+      font-size: 1.2rem;
     }
   </style>
 </head>
 <body>
-  <h1>Orange Beacon Job Tracker</h1>
-
-  <input id="jobName" placeholder="Job name">
-  <input id="jobAmount" placeholder="Job amount ($)" type="number">
+  <h1>GST & Tax Tracker</h1>
+  <input type="text" id="jobName" placeholder="Job Name" />
+  <input type="number" id="amount" placeholder="Amount (inc. GST)" />
   <button onclick="addJob()">Add Job</button>
-
   <div id="jobList"></div>
-
   <div class="totals">
-    <p>Total GST to set aside: $<span id="totalGST">0.00</span></p>
-    <p>Total Tax to set aside: $<span id="totalTax">0.00</span></p>
+    <p>Total GST Owing: $<span id="totalGST">0.00</span></p>
+    <p>Total Tax Owing: $<span id="totalTax">0.00</span></p>
   </div>
 
   <script>
@@ -82,29 +73,7 @@
       localStorage.setItem('jobs', JSON.stringify(jobs));
     }
 
-    function addJob() {
-      const name = document.getElementById('jobName').value.trim();
-      const amount = parseFloat(document.getElementById('jobAmount').value);
-      if (!name || isNaN(amount)) return;
-
-      const job = {
-        name,
-        amount,
-        gst: +(amount * 0.10).toFixed(2),
-        tax: +(amount * 0.30).toFixed(2),
-        paid: false,
-        setAside: false
-      };
-
-      jobs.push(job);
-      saveJobs();
-      renderJobs();
-
-      document.getElementById('jobName').value = '';
-      document.getElementById('jobAmount').value = '';
-    }
-
-    function renderJobs() {
+    function calculateAndRender() {
       const jobList = document.getElementById('jobList');
       jobList.innerHTML = '';
 
@@ -115,21 +84,20 @@
         const div = document.createElement('div');
         div.className = 'job';
 
-        const gst = job.gst.toFixed(2);
-        const tax = job.tax.toFixed(2);
+        const gst = job.amount / 11;
+        const net = job.amount - gst;
+        const tax = net * 0.3;
 
-        if (job.paid && !job.setAside) {
-          totalGST += parseFloat(gst);
-          totalTax += parseFloat(tax);
-        }
+        totalGST += job.paid ? gst : 0;
+        totalTax += job.paid ? tax : 0;
 
         div.innerHTML = `
-          <p><strong>${job.name}</strong> - $${job.amount.toFixed(2)}</p>
-          <p>GST: $${gst} | Tax: $${tax}</p>
-          <label><input type="checkbox" ${job.paid ? 'checked' : ''} onchange="togglePaid(${index})">Customer Paid</label>
-          <label><input type="checkbox" ${job.setAside ? 'checked' : ''} onchange="toggleSetAside(${index})">GST/Tax Set Aside</label>
+          <p><strong>${job.name}</strong></p>
+          <p>Amount: $${job.amount.toFixed(2)}</p>
+          <p>GST (1/11): $${gst.toFixed(2)}</p>
+          <p>Tax (30% after GST): $${tax.toFixed(2)}</p>
+          <label><input type="checkbox" ${job.paid ? 'checked' : ''} onchange="togglePaid(${index})" /> Paid</label>
         `;
-
         jobList.appendChild(div);
       });
 
@@ -137,19 +105,24 @@
       document.getElementById('totalTax').innerText = totalTax.toFixed(2);
     }
 
+    function addJob() {
+      const name = document.getElementById('jobName').value.trim();
+      const amount = parseFloat(document.getElementById('amount').value);
+      if (!name || isNaN(amount)) return;
+      jobs.push({ name, amount, paid: false });
+      saveJobs();
+      calculateAndRender();
+      document.getElementById('jobName').value = '';
+      document.getElementById('amount').value = '';
+    }
+
     function togglePaid(index) {
       jobs[index].paid = !jobs[index].paid;
       saveJobs();
-      renderJobs();
+      calculateAndRender();
     }
 
-    function toggleSetAside(index) {
-      jobs[index].setAside = !jobs[index].setAside;
-      saveJobs();
-      renderJobs();
-    }
-
-    renderJobs();
+    calculateAndRender();
   </script>
 </body>
 </html>
