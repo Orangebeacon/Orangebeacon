@@ -1,153 +1,247 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="mobile-web-app-capable" content="yes">
-  <link rel="apple-touch-icon" href="https://orangebeacon.github.io/Orangebeacon/icon.png">
-  <title>Orange Beacon Tracker</title>
+  <meta name="theme-color" content="#111827">
+  <title>Orange Beacon – GST & Tax Tracker</title>
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen;
-      margin: 0;
-      padding: 1rem;
-      background-color: #0d1117;
-      color: #f0f6fc;
-      font-size: 1.1rem;
-    }
-    h1 {
-      text-align: center;
-      color: #ffa500;
-    }
-    input[type="text"], input[type="number"] {
-      padding: 10px;
-      font-size: 1rem;
-      width: calc(100% - 24px);
-      margin-bottom: 10px;
-      border-radius: 8px;
-      border: none;
-    }
-    button {
-      background-color: #ffa500;
-      color: black;
-      padding: 12px 20px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 8px;
-      width: 100%;
-      margin-bottom: 20px;
-    }
-    .job {
-      background-color: #161b22;
-      padding: 15px;
-      margin-bottom: 15px;
-      border-radius: 10px;
-    }
-    .job label {
-      display: block;
-      margin: 5px 0;
-    }
-    .totals {
-      background-color: #161b22;
-      padding: 15px;
-      border-radius: 10px;
-      margin-top: 20px;
-    }
+    :root{--bg:#0b1220;--card:#111827;--ink:#e5e7eb;--muted:#9ca3af;--accent:#fb923c;--ok:#10b981;--bad:#ef4444}
+    *{box-sizing:border-box}
+    body{margin:0;font:16px system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;color:var(--ink);background:linear-gradient(180deg,#0b1220,#0b1220 60%,#0f172a)}
+    .wrap{max-width:900px;margin:0 auto;padding:env(safe-area-inset-top) 16px calc(24px + env(safe-area-inset-bottom));}
+    header{position:sticky;top:0;background:rgba(11,18,32,.7);backdrop-filter:saturate(180%) blur(10px);z-index:3}
+    .bar{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 4px}
+    h1{font-size:20px;margin:0;letter-spacing:.2px}
+    .btn{appearance:none;border:0;border-radius:16px;padding:12px 16px;background:#1f2937;color:var(--ink);font-weight:600;box-shadow:0 3px 10px rgba(0,0,0,.25);}
+    .btn:active{transform:translateY(1px)}
+    .btn.primary{background:var(--accent);color:#111}
+    .btn.ghost{background:transparent;border:1px solid #374151}
+    .grid{display:grid;gap:12px}
+    @media(min-width:720px){.grid{grid-template-columns:1.2fr .8fr}}
+    .card{background:var(--card);border:1px solid #1f2937;border-radius:18px;padding:14px 14px}
+    label{display:block;font-size:12px;color:var(--muted);margin:8px 0 4px}
+    input[type="text"],input[type="number"]{width:100%;padding:12px 12px;border-radius:12px;border:1px solid #334155;background:#0b1220;color:var(--ink)}
+    .row{display:flex;gap:10px;align-items:center}
+    .row.wrap{flex-wrap:wrap}
+    .jobs{display:flex;flex-direction:column;gap:10px;max-height:52vh;overflow:auto;padding-right:6px}
+    .job{display:grid;grid-template-columns:1fr auto;gap:6px;border:1px solid #273245;border-radius:14px;padding:10px;background:#0e1627}
+    .job h3{margin:0;font-size:15px}
+    .tags{display:flex;gap:6px;flex-wrap:wrap}
+    .tag{font-size:11px;padding:4px 8px;border-radius:999px;background:#1f2937;color:var(--muted);border:1px solid #2a364a}
+    .tag.ok{background:rgba(16,185,129,.12);color:#a7f3d0;border-color:rgba(16,185,129,.25)}
+    .tag.warn{background:rgba(251,146,60,.12);color:#fdba74;border-color:rgba(251,146,60,.25)}
+    .money{font-variant-numeric:tabular-nums}
+    .right{justify-self:end;text-align:right}
+    .small{font-size:12px;color:var(--muted)}
+    .actions{display:flex;gap:8px}
+    .switch{display:inline-flex;align-items:center;gap:8px;font-size:13px}
+    .switch input{width:18px;height:18px}
+    .totals{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .pill{padding:12px;border-radius:14px;background:#0e1627;border:1px solid #273245;text-align:center}
+    .pill strong{display:block;font-size:14px}
+    .danger{color:#fecaca}
+    .notice{padding:10px;border-radius:12px;background:#1f2937;border:1px dashed #334155;color:#fde68a}
+    .footer{margin-top:14px;font-size:12px;color:var(--muted);text-align:center}
+    .link{color:#fca5a5;text-decoration:underline;cursor:pointer}
   </style>
 </head>
 <body>
-  <h1>Orange Beacon Tracker</h1>
-  <input type="text" id="jobName" placeholder="Job Name" />
-  <input type="number" id="amount" placeholder="Total Paid (after GST)" />
-  <button onclick="addJob()">Add Job</button>
-  <div id="jobList"></div>
-  <div class="totals">
-    <p><strong>Total GST Owed:</strong> $<span id="totalGST">0.00</span></p>
-    <p><strong>Total Tax Owed:</strong> $<span id="totalTax">0.00</span></p>
-  </div>
-  <button onclick="clearAllJobs()">Clear All Jobs</button>
+  <header>
+    <div class="wrap bar">
+      <h1>Orange Beacon — GST & Tax Tracker</h1>
+      <div class="row">
+        <button class="btn ghost" id="exportBtn">Export</button>
+        <button class="btn ghost" id="importBtn">Import</button>
+        <button class="btn" id="backupBtn" title="Back up now">Backup</button>
+        <button class="btn primary" id="addBtn">Add Job</button>
+      </div>
+    </div>
+  </header>
 
-  <script>
-    let jobs = JSON.parse(localStorage.getItem('jobs')) || [];
+  <main class="wrap grid">
+    <section class="card">
+      <div class="row wrap">
+        <div style="flex:2 1 280px">
+          <label>Job name</label>
+          <input id="jobName" type="text" placeholder="e.g. Myli – Korumburra Wi‑Fi & CCTV" autocomplete="off" />
+        </div>
+        <div style="flex:1 1 160px">
+          <label>Amount (incl. GST)</label>
+          <input id="jobAmount" inputmode="decimal" type="number" step="0.01" placeholder="0.00" />
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label class="switch"><input id="paid" type="checkbox"> Customer Paid</label>
+        <label class="switch"><input id="setAside" type="checkbox"> GST & Tax Set Aside</label>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn primary" id="saveBtn">Save Job</button>
+        <button class="btn ghost" id="clearAllBtn">Clear All</button>
+      </div>
+      <div id="warn" class="notice" style="display:none;margin-top:10px"></div>
+    </section>
 
-    function saveJobs() {
-      localStorage.setItem('jobs', JSON.stringify(jobs));
+    <section class="card">
+      <div class="totals">
+        <div class="pill"><span class="small">Total (incl. GST)</span><strong class="money" id="tGross">$0.00</strong></div>
+        <div class="pill"><span class="small">GST (10%)</span><strong class="money" id="tGST">$0.00</strong></div>
+        <div class="pill"><span class="small">Income Tax (30%)</span><strong class="money" id="tTax">$0.00</strong></div>
+      </div>
+      <p class="small" style="margin-top:8px">Tax is indicative (flat 30%). Your actual rate may vary. This tool is guidance only.</p>
+    </section>
+
+    <section class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:6px">
+        <h2 style="margin:0;font-size:16px;color:#e5e7eb">Jobs</h2>
+        <input id="search" type="text" placeholder="Search jobs…" style="max-width:220px">
+      </div>
+      <div class="jobs" id="jobList"></div>
+    </section>
+  </main>
+
+  <div class="wrap footer">v3 – iOS‑safe build. If the app won’t open after an iOS update, re‑add to Home Screen and/or use Export first to back up data.</div>
+
+<script>
+(function(){
+  // --- iOS/WebKit safety: localStorage guard + crash‑safe startup ---
+  let storeOK = true; let STORE_KEY = 'obst_jobs_v3';
+  const safeStorage = {
+    get(){
+      try { return JSON.parse(localStorage.getItem(STORE_KEY)||'[]') } catch(e){ storeOK=false; return [] }
+    },
+    set(v){
+      try { localStorage.setItem(STORE_KEY, JSON.stringify(v)); }
+      catch(e){ storeOK=false }
     }
+  };
 
-    function loadJobs() {
-      document.getElementById('jobList').innerHTML = '';
-      let totalGST = 0, totalTax = 0;
+  // Load existing
+  let jobs = safeStorage.get();
 
-      jobs.forEach((job, index) => {
-        const jobEl = document.createElement('div');
-        jobEl.className = 'job';
+  const $ = id=>document.getElementById(id);
+  const fmt = n=> new Intl.NumberFormat('en-AU', {style:'currency', currency:'AUD'}).format(n||0);
+  const gstPart = gross => +(gross/11).toFixed(2);
+  const netPart = gross => +(gross - gstPart(gross)).toFixed(2);
+  const taxPart = gross => +((netPart(gross)) * 0.30).toFixed(2);
 
-        const gst = +(job.amount / 11).toFixed(2);
-        const income = job.amount - gst;
-        const tax = +(income * 0.30).toFixed(2);
+  function render(list = jobs){
+    // totals
+    const g = list.reduce((a,j)=>a + (j.amount||0), 0);
+    const GST = list.reduce((a,j)=>a + gstPart(j.amount||0),0);
+    const TAX = list.reduce((a,j)=>a + (j.paid ? taxPart(j.amount||0) : 0),0);
+    $('tGross').textContent = fmt(g);
+    $('tGST').textContent = fmt(GST);
+    $('tTax').textContent = fmt(TAX);
 
-        if (job.paid && !job.setAside) {
-          totalGST += gst;
-          totalTax += tax;
-        }
+    const box = $('jobList');
+    box.innerHTML = '';
+    list.forEach((j,idx)=>{
+      const el = document.createElement('div');
+      el.className='job';
+      el.innerHTML = `
+        <div>
+          <h3>${escapeHTML(j.name||'Untitled')}</h3>
+          <div class="tags">
+            <span class="tag">Net ${fmt(netPart(j.amount))}</span>
+            <span class="tag">GST ${fmt(gstPart(j.amount))}</span>
+            <span class="tag warn">Tax@30% ${fmt(taxPart(j.amount))}</span>
+            ${j.paid?'<span class="tag ok">Paid</span>':''}
+            ${j.setAside?'<span class="tag ok">Set Aside</span>':''}
+          </div>
+        </div>
+        <div class="right">
+          <div class="money" style="font-weight:700">${fmt(j.amount)}</div>
+          <div class="actions">
+            <button class="btn ghost" data-act="togglePaid" data-i="${idx}">${j.paid?'Unpay':'Mark Paid'}</button>
+            <button class="btn ghost" data-act="toggleAside" data-i="${idx}">${j.setAside?'Unset Aside':'Set Aside'}</button>
+            <button class="btn" data-act="del" data-i="${idx}">Delete</button>
+          </div>
+        </div>`;
+      box.appendChild(el);
+    });
+  }
 
-        jobEl.innerHTML = `
-          <strong>${job.name}</strong><br>
-          Amount: $${job.amount.toFixed(2)}<br>
-          GST: $${gst}<br>
-          Tax: $${tax}<br>
-          <label><input type="checkbox" ${job.paid ? 'checked' : ''} onchange="togglePaid(${index})"> Paid by Customer</label>
-          <label><input type="checkbox" ${job.setAside ? 'checked' : ''} onchange="toggleSetAside(${index})"> GST & Tax Set Aside</label>
-          <button onclick="deleteJob(${index})">Delete</button>
-        `;
-        document.getElementById('jobList').appendChild(jobEl);
-      });
+  function persist(){ if(storeOK) safeStorage.set(jobs); showWarn(); }
+  function showWarn(){
+    const w = $('warn');
+    if(!storeOK){
+      w.style.display='block';
+      w.textContent = 'Storage issue detected (iOS update or quota). Data is temporarily in memory only. Use Export to back up, then try re‑adding to Home Screen.';
+    } else { w.style.display='none' }
+  }
 
-      document.getElementById('totalGST').textContent = totalGST.toFixed(2);
-      document.getElementById('totalTax').textContent = totalTax.toFixed(2);
-    }
+  function addJob(){
+    const name = $('jobName').value.trim();
+    const amount = +($('jobAmount').value || 0);
+    const paid = $('paid').checked;
+    const setAside = $('setAside').checked;
+    if(!name || !amount) return alert('Enter job name and amount.');
+    jobs.unshift({name, amount, paid, setAside, ts: Date.now()});
+    $('jobName').value=''; $('jobAmount').value=''; $('paid').checked=false; $('setAside').checked=false;
+    persist(); render();
+  }
 
-    function addJob() {
-      const name = document.getElementById('jobName').value;
-      const amount = parseFloat(document.getElementById('amount').value);
-      if (!name || isNaN(amount)) return;
+  function handleList(e){
+    const btn = e.target.closest('button'); if(!btn) return;
+    const i = +btn.dataset.i; const act = btn.dataset.act; const j = jobs[i]; if(j==null) return;
+    if(act==='del'){ if(confirm('Delete this job?')){ jobs.splice(i,1); persist(); render(); } }
+    if(act==='togglePaid'){ j.paid=!j.paid; persist(); render(); }
+    if(act==='toggleAside'){ j.setAside=!j.setAside; persist(); render(); }
+  }
 
-      jobs.push({ name, amount, paid: false, setAside: false });
-      saveJobs();
-      loadJobs();
-      document.getElementById('jobName').value = '';
-      document.getElementById('amount').value = '';
-    }
+  function exportJSON(){
+    const blob = new Blob([JSON.stringify(jobs,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'orange-beacon-gst-tracker-backup.json'; a.click();
+    setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  }
 
-    function togglePaid(index) {
-      jobs[index].paid = !jobs[index].paid;
-      saveJobs();
-      loadJobs();
-    }
+  function importJSON(){
+    const inp = document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
+    inp.onchange = () => {
+      const f = inp.files[0]; if(!f) return;
+      const r = new FileReader(); r.onload = ()=>{
+        try {
+          const data = JSON.parse(r.result||'[]');
+          if(!Array.isArray(data)) throw new Error('Invalid file');
+          jobs = data; persist(); render();
+        } catch(e){ alert('Could not import: '+e.message) }
+      };
+      r.readAsText(f);
+    };
+    inp.click();
+  }
 
-    function toggleSetAside(index) {
-      jobs[index].setAside = !jobs[index].setAside;
-      saveJobs();
-      loadJobs();
-    }
+  function backupToFiles(){
+    // Same as export, but hint user to save in Files on iOS
+    exportJSON(); alert('Backup created. If the download bar appears, choose "Save to Files" on iPhone for a safe copy.');
+  }
 
-    function deleteJob(index) {
-      jobs.splice(index, 1);
-      saveJobs();
-      loadJobs();
-    }
+  function search(){
+    const q = $('search').value.toLowerCase().trim();
+    if(!q) return render();
+    render(jobs.filter(j=> (j.name||'').toLowerCase().includes(q)) );
+  }
 
-    function clearAllJobs() {
-      if (confirm('Are you sure you want to delete all jobs?')) {
-        jobs = [];
-        saveJobs();
-        loadJobs();
-      }
-    }
+  function escapeHTML(s){ return (s+"").replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])) }
 
-    loadJobs();
-  </script>
+  // Wire up
+  $('addBtn').onclick = addJob; $('saveBtn').onclick = addJob;
+  $('jobList').addEventListener('click', handleList);
+  $('exportBtn').onclick = exportJSON; $('importBtn').onclick = importJSON; $('backupBtn').onclick = backupToFiles; $('search').oninput = search;
+
+  // First paint only after DOM is ready and storage tested
+  requestAnimationFrame(()=>{ render(); showWarn(); });
+
+  // Optional: prevent iOS double-zoom on inputs
+  document.addEventListener('touchend', e=>{
+    const el = e.target; if(el && el.tagName==='INPUT'){ el.blur(); el.focus({preventScroll:true}); }
+  }, {passive:true});
+})();
+</script>
 </body>
 </html>
