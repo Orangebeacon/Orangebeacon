@@ -13,8 +13,7 @@
     body{margin:0;font:15px system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;color:var(--ink);background:var(--bg)}
     .wrap{max-width:600px;margin:0 auto;padding:env(safe-area-inset-top) 12px calc(20px + env(safe-area-inset-bottom));}
     header{position:sticky;top:0;background:rgba(11,18,32,.85);backdrop-filter:blur(8px);z-index:3}
-    .bar{display:flex;justify-content:center;padding:10px}
-    h1{font-size:18px;margin:0;text-align:center;flex:1}
+    .bar{display:flex;justify-content:center;gap:10px;padding:10px}
     .btn{appearance:none;border:0;border-radius:12px;padding:10px 12px;background:var(--accent);color:#111;font-weight:600;font-size:14px;cursor:pointer}
     .grid{display:flex;flex-direction:column;gap:10px}
     .card{background:var(--card);border:1px solid #1f2937;border-radius:14px;padding:12px}
@@ -81,145 +80,116 @@
   <div class="toast" id="toast"></div>
 
 <script>
-// Hardened script: defensive init + on-screen error reporting
 (function(){
-  function reportError(msg){
-    try{ const t=document.getElementById('toast'); if(t){ t.textContent = '⚠️ '+msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 3000); } }
-    catch(_){ /* ignore */ }
-    console.error(msg);
-  }
+  const $=id=>document.getElementById(id);
+  const toast=$('toast');
+  const showToast=msg=>{toast.textContent=msg;toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2000);};
+  const STORE_KEY='obst_jobs_v3';
+  const gstPart=g=>+(g/11).toFixed(2);
+  const netPart=g=>+(g-gstPart(g)).toFixed(2);
+  const taxPart=g=>+((netPart(g))*0.30).toFixed(2);
+  let storeOK=true;
+  const safeStorage={get(){try{return JSON.parse(localStorage.getItem(STORE_KEY)||'[]')}catch(e){storeOK=false;return[]}},set(v){try{localStorage.setItem(STORE_KEY,JSON.stringify(v))}catch(e){storeOK=false}}};
+  let jobs=safeStorage.get();
 
-  try {
-    const STORE_KEY='obst_jobs_v3';
-    const $=id=>document.getElementById(id);
-    const toast=$('toast');
-    const showToast=msg=>{ if(!toast) return; toast.textContent=msg; toast.classList.add('show'); setTimeout(()=>toast.classList.remove('show'),2000); };
-    const fmt=n=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(n||0);
-    const gstPart=g=>+(g/11).toFixed(2);
-    const netPart=g=>+(g-gstPart(g)).toFixed(2);
-    const taxPart=g=>+((netPart(g))*0.30).toFixed(2);
-
-    let storeOK=true;
-    const safeStorage={
-      get(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)||'[]'); } catch(e){ storeOK=false; return []; } },
-      set(v){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(v)); } catch(e){ storeOK=false; }
-    };
-
-    let jobs = safeStorage.get();
-
-    function escapeHTML(s){ return (s+"").replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
-
-    function render(list=jobs){
-      const g = list.reduce((a,j)=>a+(j.amount||0),0);
-      const GST = list.reduce((a,j)=>a+gstPart(j.amount||0),0);
-      const TAX = list.reduce((a,j)=>a+(j.paid?taxPart(j.amount||0):0),0);
-      const tGross = $('tGross'), tGST = $('tGST'), tTax = $('tTax');
-      if(tGross) tGross.textContent = fmt(g);
-      if(tGST) tGST.textContent = fmt(GST);
-      if(tTax) tTax.textContent = fmt(TAX);
-
-      const box = $('jobList'); if(!box) return;
-      box.innerHTML = '';
-      list.forEach((j,idx)=>{
-        const el = document.createElement('div'); el.className='job';
-        el.innerHTML = `
-          <div class="row" style="justify-content:space-between">
-            <div style="flex:1">
-              <div style="font-weight:600">${escapeHTML(j.name||'Untitled')}</div>
-              <div class="tags">
-                <span class="tag">Net ${fmt(netPart(j.amount))}</span>
-                <span class="tag">GST ${fmt(gstPart(j.amount))}</span>
-                <span class="tag warn">Tax@30% ${fmt(taxPart(j.amount))}</span>
-                ${j.paid?'<span class="tag ok">Paid</span>':''}
-                ${j.setAside?'<span class="tag ok">Set Aside</span>':''}
-              </div>
+  function escapeHTML(s){return(s+"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));}
+  function render(list=jobs){
+    const g=list.reduce((a,j)=>a+(j.amount||0),0);
+    const GST=list.reduce((a,j)=>a+gstPart(j.amount||0),0);
+    const TAX=list.reduce((a,j)=>a+(j.paid?taxPart(j.amount||0):0),0);
+    $('tGross').textContent=new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(g);
+    $('tGST').textContent=new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(GST);
+    $('tTax').textContent=new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(TAX);
+    const box=$('jobList'); box.innerHTML='';
+    list.forEach((j,idx)=>{
+      const el=document.createElement('div'); el.className='job';
+      el.innerHTML=`
+        <div class="row" style="justify-content:space-between">
+          <div style="flex:1">
+            <div style="font-weight:600">${escapeHTML(j.name||'Untitled')}</div>
+            <div class="tags">
+              <span class="tag">Net ${netPart(j.amount).toFixed(2)}</span>
+              <span class="tag">GST ${gstPart(j.amount).toFixed(2)}</span>
+              <span class="tag warn">Tax@30% ${taxPart(j.amount).toFixed(2)}</span>
+              ${j.paid?'<span class="tag ok">Paid</span>':''}
+              ${j.setAside?'<span class="tag ok">Set Aside</span>':''}
             </div>
-            <div class="money">${fmt(j.amount)}</div>
           </div>
-          <div class="actions">
-            <button class="btn" style="background:#374151;color:#e5e7eb" data-act="togglePaid" data-i="${idx}">${j.paid?'Unpay':'Mark Paid'}</button>
-            <button class="btn" style="background:#374151;color:#e5e7eb" data-act="toggleAside" data-i="${idx}">${j.setAside?'Unset Aside':'Set Aside'}</button>
-            <button class="btn" data-act="del" data-i="${idx}">Delete</button>
-          </div>`;
-        box.appendChild(el);
-      });
-
-      const w=$('warn'); if(w) w.style.display = storeOK ? 'none' : 'block';
-      if(w && !storeOK) w.textContent = 'Storage issue detected (iOS). Data is only in memory.';
-    }
-
-    function persist(){ if(storeOK) safeStorage.set(jobs); }
-
-    function addJob(){
-      const nameEl=$('jobName'), amtEl=$('jobAmount');
-      if(!nameEl || !amtEl) return;
-      const name=(nameEl.value||'').trim();
-      const amount=+(amtEl.value||0);
-      const paid=$('paid')?.checked||false;
-      const setAside=$('setAside')?.checked||false;
-      if(!name || !amount){ reportError('Enter job name and amount'); return; }
-      jobs.unshift({name, amount, paid, setAside, ts:Date.now()});
-      nameEl.value=''; amtEl.value=''; if($('paid')) $('paid').checked=false; if($('setAside')) $('setAside').checked=false;
-      persist(); render(); showToast('✅ Job saved');
-    }
-
-    function handleList(e){
-      const btn = e.target.closest('button'); if(!btn) return;
-      const i = +btn.dataset.i; const act = btn.dataset.act; const j = jobs[i]; if(j==null) return;
-      if(act==='del'){ if(confirm('Delete this job?')){ jobs.splice(i,1); persist(); render(); showToast('🗑️ Deleted'); } return; }
-      if(act==='togglePaid'){ j.paid=!j.paid; persist(); render(); showToast(j.paid?'💰 Marked Paid':'↩️ Unpaid'); return; }
-      if(act==='toggleAside'){ j.setAside=!j.setAside; persist(); render(); showToast(j.setAside?'✅ Set Aside':'↩️ Unset'); return; }
-    }
-
-    async function doBackup(){
-      const data = JSON.stringify(jobs,null,2);
-      const blob = new Blob([data], {type:'application/json'});
-      const filename = 'orange-beacon-gst-tracker-backup.json';
-      try{
-        if(navigator.share && navigator.canShare){
-          const file = new File([blob], filename, {type:'application/json'});
-          if(navigator.canShare({files:[file]})){
-            await navigator.share({files:[file], title:'GST & Tax Tracker backup'});
-            showToast('💾 Backup shared');
-            return;
-          }
-        }
-      }catch(_){ /* fall through */ }
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href=url; a.download=filename; a.target='_blank';
-      document.body.appendChild(a); a.click();
-      setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 2000);
-      showToast('💾 Backup downloaded');
-    }
-
-    function doRestore(){
-      const inp=document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
-      inp.onchange=()=>{
-        const f=inp.files && inp.files[0]; if(!f) return;
-        const r=new FileReader(); r.onload=()=>{
-          try{
-            const data=JSON.parse(r.result||'[]'); if(!Array.isArray(data)) throw new Error('Invalid file');
-            jobs=data; persist(); render(); showToast('📥 Restored');
-          }catch(e){ reportError('Could not restore: '+e.message); }
-        };
-        r.readAsText(f);
-      };
-      inp.click();
-    }
-
-    // Bind events only if elements exist
-    const saveBtn=$('saveBtn'); if(saveBtn) saveBtn.onclick=addJob;
-    const list=$('jobList'); if(list) list.addEventListener('click', handleList);
-    const backupBtn=$('backupBtn'); if(backupBtn) backupBtn.onclick=doBackup;
-    const importBtn=$('importBtn'); if(importBtn) importBtn.onclick=doRestore;
-    const clearBtn=$('clearAllBtn'); if(clearBtn) clearBtn.onclick=()=>{ if(confirm('Clear ALL jobs?')){ jobs=[]; persist(); render(); showToast('🧹 Cleared'); } };
-    const search=$('search'); if(search) search.oninput=()=>{ const q=search.value.toLowerCase().trim(); if(!q) return render(); render(jobs.filter(j=>(j.name||'').toLowerCase().includes(q))); };
-
-    // First paint
-    render();
-  } catch (e) {
-    reportError('Startup error: '+ (e && e.message ? e.message : e));
+          <div class="money">$${j.amount.toFixed(2)}</div>
+        </div>
+        <div class="actions">
+          <button class="btn" style="background:#374151;color:#e5e7eb" data-act="togglePaid" data-i="${idx}">${j.paid?'Unpay':'Mark Paid'}</button>
+          <button class="btn" style="background:#374151;color:#e5e7eb" data-act="toggleAside" data-i="${idx}">${j.setAside?'Unset Aside':'Set Aside'}</button>
+          <button class="btn" data-act="del" data-i="${idx}">Delete</button>
+        </div>`;
+      box.appendChild(el);
+    });
   }
+
+  function persist(){if(storeOK)safeStorage.set(jobs);}
+  function addJob(){
+    const name=$('jobName').value.trim();
+    const amount=+($('jobAmount').value||0);
+    const paid=$('paid').checked;
+    const setAside=$('setAside').checked;
+    if(!name||!amount) return alert('Enter job name and amount.');
+    jobs.unshift({name,amount,paid,setAside,ts:Date.now()});
+    $('jobName').value=''; $('jobAmount').value=''; $('paid').checked=false; $('setAside').checked=false;
+    persist(); render(); showToast('✅ Job saved');
+  }
+  function handleList(e){
+    const btn=e.target.closest('button'); if(!btn) return;
+    const i=+btn.dataset.i; const act=btn.dataset.act; const j=jobs[i]; if(j==null) return;
+    if(act==='del'){ if(confirm('Delete this job?')){ jobs.splice(i,1); persist(); render(); showToast('🗑️ Deleted'); } return; }
+    if(act==='togglePaid'){ j.paid=!j.paid; persist(); render(); showToast(j.paid?'💰 Marked Paid':'❌ Unpaid'); return; }
+    if(act==='toggleAside'){ j.setAside=!j.setAside; persist(); render(); showToast(j.setAside?'✅ Set Aside':'❌ Unset'); return; }
+  }
+  async function exportJSON(){
+    const data=JSON.stringify(jobs,null,2);
+    const blob=new Blob([data],{type:'application/json'});
+    const filename='orange-beacon-gst-tracker-backup.json';
+    try{
+      if(navigator.share&&navigator.canShare){
+        const file=new File([blob],filename,{type:'application/json'});
+        if(navigator.canShare({files:[file]})){
+          await navigator.share({files:[file],title:'GST & Tax Tracker backup'});
+          showToast('💾 Backup shared');
+          return;
+        }
+      }
+    }catch(err){}
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=filename; a.target='_blank';
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{URL.revokeObjectURL(url); a.remove();},2000);
+    showToast('💾 Backup downloaded');
+  }
+  function importJSON(){
+    const inp=document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
+    inp.onchange=()=>{
+      const f=inp.files&&inp.files[0]; if(!f) return;
+      const r=new FileReader();
+      r.onload=()=>{
+        try{
+          const data=JSON.parse(r.result||'[]');
+          if(!Array.isArray(data)) throw new Error('Invalid file');
+          jobs=data; persist(); render(); showToast('📥 Restored');
+        }catch(e){ alert('Could not restore: '+e.message); }
+      };
+      r.readAsText(f);
+    };
+    inp.click();
+  }
+
+  // Event bindings
+  $('saveBtn').onclick=addJob;
+  $('jobList').addEventListener('click',handleList);
+  $('backupBtn').onclick=exportJSON;
+  $('importBtn').onclick=importJSON;
+  $('clearAllBtn').onclick=()=>{ if(confirm('Clear ALL jobs?')){ jobs=[]; persist(); render(); showToast('🧹 Cleared'); } };
+  $('search').oninput=()=>{ const q=$('search').value.toLowerCase().trim(); if(!q) return render(); render(jobs.filter(j=>(j.name||'').toLowerCase().includes(q))); };
+
+  render();
 })();
 </script>
 </body>
