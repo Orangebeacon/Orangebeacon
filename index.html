@@ -42,9 +42,7 @@
   <header>
     <div class="wrap bar">
       <h1>GST & Tax Tracker</h1>
-      <button class="btn ghost" id="exportBtn">Export</button>
-      <button class="btn ghost" id="importBtn">Import</button>
-      <button class="btn primary" id="addBtn">Add</button>
+      <button class="btn primary" id="backupBtn">Backup</button>
     </div>
   </header>
 
@@ -82,7 +80,30 @@
   <div class="wrap footer">v3 Mobile Layout</div>
 
 <script>
-// Same JS as previous build – logic unchanged, only layout improved for mobile.
+// JS from previous step with export removed, backupBtn triggers exportJSON.
+(function(){
+  let storeOK=true;const STORE_KEY='obst_jobs_v3';
+  const $=id=>document.getElementById(id);
+  const fmt=n=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD'}).format(n||0);
+  const gstPart=gross=>+(gross/11).toFixed(2);
+  const netPart=gross=>+(gross-gstPart(gross)).toFixed(2);
+  const taxPart=gross=>+((netPart(gross))*0.30).toFixed(2);
+  const safeStorage={get(){try{return JSON.parse(localStorage.getItem(STORE_KEY)||'[]')}catch(e){storeOK=false;return[]}},set(v){try{localStorage.setItem(STORE_KEY,JSON.stringify(v))}catch(e){storeOK=false}}};
+  let jobs=safeStorage.get();
+
+  function render(list=jobs){const g=list.reduce((a,j)=>a+(j.amount||0),0);const GST=list.reduce((a,j)=>a+gstPart(j.amount||0),0);const TAX=list.reduce((a,j)=>a+(j.paid?taxPart(j.amount||0):0),0);$('tGross').textContent=fmt(g);$('tGST').textContent=fmt(GST);$('tTax').textContent=fmt(TAX);const box=$('jobList');box.innerHTML='';list.forEach((j,idx)=>{const el=document.createElement('div');el.className='job';el.innerHTML=`<div class="row" style="justify-content:space-between"><div style="flex:1"><div style="font-weight:600">${escapeHTML(j.name||'Untitled')}</div><div class="tags"><span class="tag">Net ${fmt(netPart(j.amount))}</span><span class="tag">GST ${fmt(gstPart(j.amount))}</span><span class="tag warn">Tax@30% ${fmt(taxPart(j.amount))}</span>${j.paid?'<span class="tag ok">Paid</span>':''}${j.setAside?'<span class="tag ok">Set Aside</span>':''}</div></div><div class="money">${fmt(j.amount)}</div></div><div class="actions"><button class="btn ghost" data-act="togglePaid" data-i="${idx}">${j.paid?'Unpay':'Mark Paid'}</button><button class="btn ghost" data-act="toggleAside" data-i="${idx}">${j.setAside?'Unset Aside':'Set Aside'}</button><button class="btn" data-act="del" data-i="${idx}">Delete</button></div>`;box.appendChild(el);});showWarn();}
+
+  function persist(){if(storeOK)safeStorage.set(jobs);}function showWarn(){const w=$('warn');if(!storeOK){w.style.display='block';w.textContent='Storage issue detected.';}else{w.style.display='none';}}
+  function addJob(){const name=$('jobName').value.trim();const amount=+($('jobAmount').value||0);const paid=$('paid').checked;const setAside=$('setAside').checked;if(!name||!amount)return alert('Enter job name and amount.');jobs.unshift({name,amount,paid,setAside,ts:Date.now()});$('jobName').value='';$('jobAmount').value='';$('paid').checked=false;$('setAside').checked=false;persist();render();}
+  function handleList(e){const btn=e.target.closest('button');if(!btn)return;const i=+btn.dataset.i;const act=btn.dataset.act;const j=jobs[i];if(j==null)return;if(act==='del'){if(confirm('Delete this job?')){jobs.splice(i,1);persist();render();}return;}if(act==='togglePaid'){j.paid=!j.paid;persist();render();return;}if(act==='toggleAside'){j.setAside=!j.setAside;persist();render();return;}}
+
+  async function exportJSON(){const data=JSON.stringify(jobs,null,2);const blob=new Blob([data],{type:'application/json'});const filename='orange-beacon-gst-tracker-backup.json';try{if(navigator.share&&navigator.canShare){const file=new File([blob],filename,{type:'application/json'});if(navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'GST & Tax Tracker backup',text:'Backup JSON'});return;}}}catch(err){}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;a.target='_blank';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},2000);alert('Backup created.');}
+
+  $('saveBtn').onclick=addJob;$('jobList').addEventListener('click',handleList);$('backupBtn').onclick=exportJSON;$('clearAllBtn').onclick=()=>{if(confirm('Clear ALL jobs?')){jobs=[];persist();render();}};
+  const sb=$('search');if(sb)sb.oninput=()=>{const q=sb.value.toLowerCase().trim();if(!q)return render();render(jobs.filter(j=>(j.name||'').toLowerCase().includes(q)));};
+  requestAnimationFrame(()=>{render();});
+  function escapeHTML(s){return(s+"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));}
+})();
 </script>
 </body>
 </html>
