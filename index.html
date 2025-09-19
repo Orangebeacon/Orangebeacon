@@ -13,11 +13,9 @@
     body{margin:0;font:15px system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;color:var(--ink);background:var(--bg)}
     .wrap{max-width:600px;margin:0 auto;padding:env(safe-area-inset-top) 12px calc(20px + env(safe-area-inset-bottom));}
     header{position:sticky;top:0;background:rgba(11,18,32,.85);backdrop-filter:blur(8px);z-index:3}
-    .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:10px 4px}
-    h1{font-size:18px;margin:0;flex:1 1 100%;text-align:center}
-    .btn{appearance:none;border:0;border-radius:12px;padding:10px 12px;background:#1f2937;color:var(--ink);font-weight:600;font-size:14px}
-    .btn.primary{background:var(--accent);color:#111}
-    .btn.ghost{background:transparent;border:1px solid #374151}
+    .bar{display:flex;justify-content:center;padding:10px}
+    h1{font-size:18px;margin:0;text-align:center;flex:1}
+    .btn{appearance:none;border:0;border-radius:12px;padding:10px 12px;background:var(--accent);color:#111;font-weight:600;font-size:14px}
     .grid{display:flex;flex-direction:column;gap:10px}
     .card{background:var(--card);border:1px solid #1f2937;border-radius:14px;padding:12px}
     label{display:block;font-size:13px;color:var(--muted);margin:6px 0 2px}
@@ -41,8 +39,7 @@
 <body>
   <header>
     <div class="wrap bar">
-      <h1>GST & Tax Tracker</h1>
-      <button class="btn primary" id="backupBtn">Backup</button>
+      <button class="btn" id="backupBtn">Backup</button>
     </div>
   </header>
 
@@ -57,8 +54,8 @@
         <label><input id="setAside" type="checkbox"> GST & Tax Set Aside</label>
       </div>
       <div class="row">
-        <button class="btn primary" id="saveBtn">Save</button>
-        <button class="btn ghost" id="clearAllBtn">Clear All</button>
+        <button class="btn" id="saveBtn">Save</button>
+        <button class="btn" style="background:#1f2937;color:#e5e7eb" id="clearAllBtn">Clear All</button>
       </div>
       <div id="warn" class="notice" style="display:none"></div>
     </section>
@@ -80,7 +77,7 @@
   <div class="wrap footer">v3 Mobile Layout</div>
 
 <script>
-// JS from previous step with export removed, backupBtn triggers exportJSON.
+// Same JS logic, now backupBtn triggers exportJSON only, addBtn fully removed
 (function(){
   let storeOK=true;const STORE_KEY='obst_jobs_v3';
   const $=id=>document.getElementById(id);
@@ -91,13 +88,13 @@
   const safeStorage={get(){try{return JSON.parse(localStorage.getItem(STORE_KEY)||'[]')}catch(e){storeOK=false;return[]}},set(v){try{localStorage.setItem(STORE_KEY,JSON.stringify(v))}catch(e){storeOK=false}}};
   let jobs=safeStorage.get();
 
-  function render(list=jobs){const g=list.reduce((a,j)=>a+(j.amount||0),0);const GST=list.reduce((a,j)=>a+gstPart(j.amount||0),0);const TAX=list.reduce((a,j)=>a+(j.paid?taxPart(j.amount||0):0),0);$('tGross').textContent=fmt(g);$('tGST').textContent=fmt(GST);$('tTax').textContent=fmt(TAX);const box=$('jobList');box.innerHTML='';list.forEach((j,idx)=>{const el=document.createElement('div');el.className='job';el.innerHTML=`<div class="row" style="justify-content:space-between"><div style="flex:1"><div style="font-weight:600">${escapeHTML(j.name||'Untitled')}</div><div class="tags"><span class="tag">Net ${fmt(netPart(j.amount))}</span><span class="tag">GST ${fmt(gstPart(j.amount))}</span><span class="tag warn">Tax@30% ${fmt(taxPart(j.amount))}</span>${j.paid?'<span class="tag ok">Paid</span>':''}${j.setAside?'<span class="tag ok">Set Aside</span>':''}</div></div><div class="money">${fmt(j.amount)}</div></div><div class="actions"><button class="btn ghost" data-act="togglePaid" data-i="${idx}">${j.paid?'Unpay':'Mark Paid'}</button><button class="btn ghost" data-act="toggleAside" data-i="${idx}">${j.setAside?'Unset Aside':'Set Aside'}</button><button class="btn" data-act="del" data-i="${idx}">Delete</button></div>`;box.appendChild(el);});showWarn();}
+  function render(list=jobs){const g=list.reduce((a,j)=>a+(j.amount||0),0);const GST=list.reduce((a,j)=>a+gstPart(j.amount||0),0);const TAX=list.reduce((a,j)=>a+(j.paid?taxPart(j.amount||0):0),0);$('tGross').textContent=fmt(g);$('tGST').textContent=fmt(GST);$('tTax').textContent=fmt(TAX);const box=$('jobList');box.innerHTML='';list.forEach((j,idx)=>{const el=document.createElement('div');el.className='job';el.innerHTML=`<div class="row" style="justify-content:space-between"><div style="flex:1"><div style="font-weight:600">${escapeHTML(j.name||'Untitled')}</div><div class="tags"><span class="tag">Net ${fmt(netPart(j.amount))}</span><span class="tag">GST ${fmt(gstPart(j.amount))}</span><span class="tag warn">Tax@30% ${fmt(taxPart(j.amount))}</span>${j.paid?'<span class="tag ok">Paid</span>':''}${j.setAside?'<span class="tag ok">Set Aside</span>':''}</div></div><div class="money">${fmt(j.amount)}</div></div><div class="actions"><button class="btn" style="background:#374151;color:#e5e7eb" data-act="togglePaid" data-i="${idx}">${j.paid?'Unpay':'Mark Paid'}</button><button class="btn" style="background:#374151;color:#e5e7eb" data-act="toggleAside" data-i="${idx}">${j.setAside?'Unset Aside':'Set Aside'}</button><button class="btn" data-act="del" data-i="${idx}">Delete</button></div>`;box.appendChild(el);});showWarn();}
 
   function persist(){if(storeOK)safeStorage.set(jobs);}function showWarn(){const w=$('warn');if(!storeOK){w.style.display='block';w.textContent='Storage issue detected.';}else{w.style.display='none';}}
   function addJob(){const name=$('jobName').value.trim();const amount=+($('jobAmount').value||0);const paid=$('paid').checked;const setAside=$('setAside').checked;if(!name||!amount)return alert('Enter job name and amount.');jobs.unshift({name,amount,paid,setAside,ts:Date.now()});$('jobName').value='';$('jobAmount').value='';$('paid').checked=false;$('setAside').checked=false;persist();render();}
   function handleList(e){const btn=e.target.closest('button');if(!btn)return;const i=+btn.dataset.i;const act=btn.dataset.act;const j=jobs[i];if(j==null)return;if(act==='del'){if(confirm('Delete this job?')){jobs.splice(i,1);persist();render();}return;}if(act==='togglePaid'){j.paid=!j.paid;persist();render();return;}if(act==='toggleAside'){j.setAside=!j.setAside;persist();render();return;}}
 
-  async function exportJSON(){const data=JSON.stringify(jobs,null,2);const blob=new Blob([data],{type:'application/json'});const filename='orange-beacon-gst-tracker-backup.json';try{if(navigator.share&&navigator.canShare){const file=new File([blob],filename,{type:'application/json'});if(navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'GST & Tax Tracker backup',text:'Backup JSON'});return;}}}catch(err){}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;a.target='_blank';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},2000);alert('Backup created.');}
+  async function exportJSON(){const data=JSON.stringify(jobs,null,2);const blob=new Blob([data],{type:'application/json'});const filename='orange-beacon-gst-tracker-backup.json';try{if(navigator.share&&navigator.canShare){const file=new File([blob],filename,{type:'application/json'});if(navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'GST & Tax Tracker backup'});return;}}}catch(err){}const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;a.target='_blank';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},2000);alert('Backup created.');}
 
   $('saveBtn').onclick=addJob;$('jobList').addEventListener('click',handleList);$('backupBtn').onclick=exportJSON;$('clearAllBtn').onclick=()=>{if(confirm('Clear ALL jobs?')){jobs=[];persist();render();}};
   const sb=$('search');if(sb)sb.oninput=()=>{const q=sb.value.toLowerCase().trim();if(!q)return render();render(jobs.filter(j=>(j.name||'').toLowerCase().includes(q)));};
