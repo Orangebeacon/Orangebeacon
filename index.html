@@ -60,8 +60,7 @@
       <input id="jobAmount" inputmode="decimal" type="number" step="0.01" placeholder="0.00">
       <div class="row">
         <label><input id="paid" type="checkbox"> Paid</label>
-        <label><input id="setAside" type="checkbox"> GST & Tax Set Aside</label>
-      </div>
+        </div>
       <div class="row">
         <button class="btn" id="saveBtn">Save</button>
         <button class="btn secondary" id="clearAllBtn">Clear All</button>
@@ -105,7 +104,7 @@
 
   function render(list=jobs){
     const g=list.reduce((a,j)=>a+(j.amount||0),0);
-    const GST=list.reduce((a,j)=>a+gstPart(j.amount||0),0);
+    const GST=list.reduce((a,j)=>a + (j.paid ? gstPart(j.amount||0) : 0),0);
     const TAX=list.reduce((a,j)=>a+(j.paid?taxPart(j.amount||0):0),0);
     $('tGross').textContent=money(g);
     $('tGST').textContent=money(GST);
@@ -123,14 +122,13 @@
               <span class="tag">GST ${money(gstPart(j.amount))}</span>
               <span class="tag warn">Tax@30% ${money(taxPart(j.amount))}</span>
               ${j.paid?'<span class="tag ok">Paid</span>':''}
-              ${j.setAside?'<span class="tag ok">Set Aside</span>':''}
+              
             </div>
           </div>
           <div class="money">${money(j.amount)}</div>
         </div>
         <div class="actions">
           <button class="btn secondary" data-act="togglePaid" data-i="${idx}">${j.paid?'Unpay':'Mark Paid'}</button>
-          <button class="btn secondary" data-act="toggleAside" data-i="${idx}">${j.setAside?'Unset Aside':'Set Aside'}</button>
           <button class="btn" data-act="del" data-i="${idx}">Delete</button>
         </div>`;
       box.appendChild(el);
@@ -146,10 +144,10 @@
     const name=$('jobName').value.trim();
     const amount=+($('jobAmount').value||0);
     const paid=$('paid').checked;
-    const setAside=$('setAside').checked;
+    const setAside=false; // removed
     if(!name||!amount){ showToast('Enter job name and amount'); return; }
     jobs.unshift({name,amount,paid,setAside,ts:Date.now()});
-    $('jobName').value=''; $('jobAmount').value=''; $('paid').checked=false; $('setAside').checked=false;
+    $('jobName').value=''; $('jobAmount').value=''; $('paid').checked=false; 
     persist(); render(); showToast('✅ Job saved');
   }
 
@@ -158,7 +156,7 @@
     const i=+btn.dataset.i; const act=btn.dataset.act; const j=jobs[i]; if(j==null) return;
     if(act==='del'){ if(confirm('Delete this job?')){ jobs.splice(i,1); persist(); render(); showToast('🗑️ Deleted'); } return; }
     if(act==='togglePaid'){ j.paid=!j.paid; persist(); render(); showToast(j.paid?'💰 Marked Paid':'❌ Unpaid'); return; }
-    if(act==='toggleAside'){ j.setAside=!j.setAside; persist(); render(); showToast(j.setAside?'✅ Set Aside':'❌ Unset'); return; }
+    
   }
 
   async function doBackup(){
